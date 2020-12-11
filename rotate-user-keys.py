@@ -108,7 +108,7 @@ default_paths = [
   '~/.local/share/.DBeaverData/workspace6/General/.dbeaver/credentials-config.json',
 ]
 
-aws_creds_path = "/Users/graham/.aws/credentials"
+aws_creds_path = os.path.expanduser('~/.aws/credentials')
 
 # Create IAM and STS clients
 iam = boto3.client('iam')
