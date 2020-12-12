@@ -165,6 +165,9 @@ my_user_name = current_user_details["User"]["UserName"]
 #Get access keys assigned to user
 user_access_keys = iam.list_access_keys(UserName=my_user_name)
 
+print ()
+print ("Rotating access keys for", current_user_details["User"]["UserName"])
+
 
 #If there are access keys other than the current session, delete them
 if len(user_access_keys["AccessKeyMetadata"]) > 1:
@@ -181,11 +184,10 @@ new_access_key = response["AccessKey"]["AccessKeyId"]
 new_access_secret = response["AccessKey"]["SecretAccessKey"]
 
 print ("Created New Access Key: " + new_access_key)
-print ("Created New Access Secret: " + new_access_secret)
 
 
 print ()
-print ("Waiting for new secrets to become active...")
+print ("Waiting for new acess key to become active...")
 
 #Insert step to create a session and test new access keys here.
 #retry 10 times with a lag starting 2 seconds and doubling each time
@@ -201,11 +203,10 @@ orig_creds = decrypt_file(filepath, key)
 updated_creds = update_creds(orig_creds, new_access_key, new_access_secret)
 encrypt_to_file(updated_creds, filepath, key)
 
-print ("Writing new access key:")
-print (current_access_secret)
+print ("Updating local AWS credentials file...")
 update_aws_creds_file(aws_creds_path, current_access_key, current_access_secret, new_access_key, new_access_secret)
 
 #Delete old access key
 iam.delete_access_key(AccessKeyId=current_access_key)
 
-print ("Complete")
+print ("Update complete. Don't forget to restart DBeaver to pick up new credentials!")
