@@ -73,6 +73,8 @@ def update_creds(config_string, new_access_key, new_access_secret):
 def update_aws_creds_file(file_name, old_access_key, old_access_secret, new_access_key, new_access_secret):
     #Todo - refactor to tidy up 'replace' function
     #input file
+
+    #replace with single file handle
     fin = open(file_name, "rt")
     #output file to write the result to
     fout = open(file_name + ".new", "wt")
