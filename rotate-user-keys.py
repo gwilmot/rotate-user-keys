@@ -149,7 +149,11 @@ if len(sys.argv) < 2:
 else:
   filepath = sys.argv[1]
 
-current_user_details = iam.get_user()
+try:
+    current_user_details = iam.get_user()
+except:
+    print ("Cannot connect to AWS API! Check your connection and VPN settings.")
+    exit()
 
 session = boto3.Session()
 credentials = session.get_credentials()
@@ -165,6 +169,8 @@ my_user_name = current_user_details["User"]["UserName"]
 #Get access keys assigned to user
 user_access_keys = iam.list_access_keys(UserName=my_user_name)
 
+print ("############################################################################")
+print ("                   Rotate Access Keys                              ")
 print ()
 print ("Rotating access keys for", current_user_details["User"]["UserName"])
 
@@ -192,8 +198,15 @@ print ("Waiting for new acess key to become active...")
 #Insert step to create a session and test new access keys here.
 #retry 10 times with a lag starting 2 seconds and doubling each time
 
-while not creds_updated(new_access_key,new_access_secret):
+i = 0
+timeout_expired = False
+while not creds_updated(new_access_key,new_access_secret) and not timeout_expired:
     time.sleep(2)
+    i = i + 1
+    if i >= 5:
+        timeout_expired = True
+        print ("Crendential update failed!  Aborting.")
+        exit()
 
 
 print ()
@@ -210,3 +223,6 @@ update_aws_creds_file(aws_creds_path, current_access_key, current_access_secret,
 iam.delete_access_key(AccessKeyId=current_access_key)
 
 print ("Update complete. Don't forget to restart DBeaver to pick up new credentials!")
+print()
+print ("############################################################################")
+print()
