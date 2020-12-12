@@ -13,6 +13,8 @@ from Crypto import Random
 from Crypto.Cipher import AES
 
 def pad(s):
+    #Pre-encryption padding.  Creates a pad to ensure string can be split into 16 byte blocks.
+    #Padding byte is given a value between 1 and 16, and represents the length of the padding string. eg 4 padding bytes, padding char=0x04
     pad_size = AES.block_size - (len(s) % AES.block_size)
     return s + bytes([pad_size]) * pad_size
 
@@ -69,6 +71,7 @@ def update_creds(config_string, new_access_key, new_access_secret):
     return updated_config_string
 
 def update_aws_creds_file(file_name, old_access_key, old_access_secret, new_access_key, new_access_secret):
+    #Todo - refactor to tidy up 'replace' function
     #input file
     fin = open(file_name, "rt")
     #output file to write the result to
@@ -201,13 +204,12 @@ print ("Waiting for new acess key to become active...")
 i = 0
 timeout_expired = False
 while not creds_updated(new_access_key,new_access_secret) and not timeout_expired:
-    time.sleep(2)
     i = i + 1
     if i >= 5:
         timeout_expired = True
         print ("Crendential update failed!  Aborting.")
         exit()
-
+    time.sleep(2)
 
 print ()
 #Set DBeaver to use new Access Key
