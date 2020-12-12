@@ -95,6 +95,15 @@ def update_aws_creds_file(file_name, old_access_key, old_access_secret, new_acce
     os.remove(file_name + ".new")
     os.remove(file_name + ".new1")
 
+def creds_updated (access_key, access_secret):
+    test_client = boto3.client('iam',
+            aws_access_key_id=access_key,
+            aws_secret_access_key=access_secret)
+    try:
+        test_client.get_user()
+        return 1
+    except:
+        return 0
 
 
 #Hardcoded symmetric encryption key used by DBeaver
@@ -174,12 +183,16 @@ new_access_secret = response["AccessKey"]["SecretAccessKey"]
 print ("Created New Access Key: " + new_access_key)
 print ("Created New Access Secret: " + new_access_secret)
 
-#Insert step to create a session and test new access keys here.
-#retry 10 times with a lag starting 2 seconds and doubling each time
+
 print ()
 print ("Waiting for new secrets to become active...")
 
-time.sleep(10)
+#Insert step to create a session and test new access keys here.
+#retry 10 times with a lag starting 2 seconds and doubling each time
+
+while not creds_updated(new_access_key,new_access_secret):
+    time.sleep(2)
+
 
 print ()
 #Set DBeaver to use new Access Key
