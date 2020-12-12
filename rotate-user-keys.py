@@ -99,6 +99,8 @@ def update_aws_creds_file(file_name, old_access_key, old_access_secret, new_acce
     os.remove(file_name + ".new1")
 
 def creds_updated (access_key, access_secret):
+    #Create temporary session to make API call to AWS IAM.
+    #Successful connection verifies creds have been updated successfully and function returns true
     test_client = boto3.client('iam',
             aws_access_key_id=access_key,
             aws_secret_access_key=access_secret)
