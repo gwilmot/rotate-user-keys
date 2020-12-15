@@ -158,16 +158,22 @@ else:
 
 i=0
 established_connection = False
-while not established_connection and i < 10:
+max_retries = 9999999
+while not established_connection and i < max_retries:
    try:
       current_user_details = iam.get_user()
       established_connection = True
       print ("Established connection!")
    except:
-      #i = i+1 #uncomment this line to enable maximum retries
+      if i < 1:
+        print ("Waiting for network connection...")
+      else:
+        print ("...")
+      i = i + 1
+
       time.sleep(10)
 
-if i >= 10:
+if i >= max_retries:
     exit("Retry timeout expired")
 
 
@@ -220,7 +226,7 @@ while not creds_updated(new_access_key,new_access_secret) and not timeout_expire
     i = i + 1
     if i >= 5:
         timeout_expired = True
-        print ("Crendential update failed!  Aborting.")
+        print ("Credential update failed!  Aborting.")
         exit()
     time.sleep(2)
 
