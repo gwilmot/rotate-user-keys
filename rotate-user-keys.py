@@ -131,8 +131,8 @@ iam = boto3.client('iam')
 sts = boto3.client('sts')
 
 #pull in access key from env vars.  This will be replaced
-new_access_key =os.environ['AWS_ACCESS_KEY']
-new_access_secret = os.environ['AWS_ACCESS_SECRET']
+#new_access_key =os.environ['AWS_ACCESS_KEY']
+#new_access_secret = os.environ['AWS_ACCESS_SECRET']
 
 
 # Get Caller Identity
@@ -156,11 +156,20 @@ if len(sys.argv) < 2:
 else:
   filepath = sys.argv[1]
 
-try:
-    current_user_details = iam.get_user()
-except:
-    print ("Cannot connect to AWS API! Check your connection and VPN settings.")
-    exit()
+i=0
+established_connection = False
+while not established_connection and i < 10:
+   try:
+      current_user_details = iam.get_user()
+      established_connection = True
+      print ("Established connection!")
+   except:
+      #i = i+1 #uncomment this line to enable maximum retries
+      time.sleep(10)
+
+if i >= 10:
+    exit("Retry timeout expired")
+
 
 session = boto3.Session()
 credentials = session.get_credentials()
