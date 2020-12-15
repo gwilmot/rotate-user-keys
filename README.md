@@ -10,7 +10,7 @@ rotate-user-keys is a Python script for the purpose of each user rotating their 
 6. Update AWS Credentials file to use new access key and secret
 7. Call AWS IAM API and delete the previously active access key
 
-This script can be added to the Automator app on OSX.  This in turn can be triggered by adding to a Login Item under System Preferences | Users and Groups | <Username>.  This will allow the credentials to be rotated upon each login.  The script will wait until it can connect to the internet before continuing.
+This script can be added to the Automator app on OSX.  This in turn can be triggered by adding to a Login Item under System Preferences | Users and Groups | \<Username\>.  This will allow the credentials to be rotated upon each login.  The script will wait until it can connect to the internet before continuing.
   
 Note that if the credentials are rotated whilst DBeaver is open, the DBeaver application will need to be closed and reopened to pick up and use the new credentials.
 
