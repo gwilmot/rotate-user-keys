@@ -70,35 +70,27 @@ def update_creds(config_string, new_access_key, new_access_secret):
     updated_config_string = updated_config_string.replace(b' ', b'')
     return updated_config_string
 
+
+def replace_in_file (file_name, orig_string, replacement_string):
+   #replace with single file handle
+   with open(file_name, "rt") as fin:
+       with open(file_name + ".out", "wt") as fout:
+          for line in fin:
+            fout.write(line.replace(orig_string, replacement_string))
+   copyfile(file_name + ".out", file_name)
+   os.remove(file_name + ".out")
+
+
 def update_aws_creds_file(file_name, old_access_key, old_access_secret, new_access_key, new_access_secret):
     #Todo - refactor to tidy up 'replace' function
     #input file
+    copyfile(file_name, file_name + ".bak") #create a backup in case it goes wrong!
+    copyfile(file_name, file_name + ".tmp") #create a tmp file to work with
+    replace_in_file (file_name + ".tmp", old_access_key, new_access_key) #1st pass to replace access key
+    replace_in_file (file_name + ".tmp", old_access_secret, new_access_secret) #2nd pass to replace access secret
+    copyfile(file_name + ".tmp", file_name) #replace master creds file
+    os.remove(file_name + ".tmp")
 
-    #replace with single file handle
-    fin = open(file_name, "rt")
-    #output file to write the result to
-    fout = open(file_name + ".new", "wt")
-    #for each line in the input file
-    for line in fin:
-	    #read replace the string and write to output file
-        fout.write(line.replace(old_access_key, new_access_key))
-    fin.close()
-    fout.close()
-
-    fin = open(file_name + ".new", "rt")
-    #output file to write the result to
-    fout = open(file_name + ".new1", "wt")
-
-
-    for line in fin:
-        fout.write(line.replace(old_access_secret, new_access_secret))
-        #close input and output files
-    fin.close()
-    fout.close()
-
-    copyfile(file_name + ".new1", file_name)
-    os.remove(file_name + ".new")
-    os.remove(file_name + ".new1")
 
 def creds_updated (access_key, access_secret):
     #Create temporary session to make API call to AWS IAM.
@@ -130,20 +122,13 @@ aws_creds_path = os.path.expanduser('~/.aws/credentials')
 iam = boto3.client('iam')
 sts = boto3.client('sts')
 
-#pull in access key from env vars.  This will be replaced
-#new_access_key =os.environ['AWS_ACCESS_KEY']
-#new_access_secret = os.environ['AWS_ACCESS_SECRET']
-
-
-# Get Caller Identity
-#response = sts.get_caller_identity()
-#print(response)
-
+#Initialise dicts
 access_key_id = {}
 access_key_date = {}
 access_key_age = {}
 access_key_last_used = {}
 
+#Determine correct DBeaver creds path
 if len(sys.argv) < 2:
   for path in default_paths:
     filepath = os.path.expanduser(path)
@@ -156,6 +141,7 @@ if len(sys.argv) < 2:
 else:
   filepath = sys.argv[1]
 
+#Sense network connection and get current user info from AWS IAM API
 i=0
 established_connection = False
 max_retries = 9999999
@@ -170,17 +156,14 @@ while not established_connection and i < max_retries:
       else:
         print ("...")
       i = i + 1
-
       time.sleep(10)
-
 if i >= max_retries:
     exit("Retry timeout expired")
 
 
 session = boto3.Session()
 credentials = session.get_credentials()
-
-# Credentials are refreshable, so accessing your access key / secret key
+# Credentials are refreshable, so accessing access key / secret key
 # separately can lead to a race condition. Use this to get an actual matched
 # set.
 credentials = credentials.get_frozen_credentials()
@@ -197,6 +180,7 @@ print ()
 print ("Rotating access keys for", current_user_details["User"]["UserName"])
 
 
+#Create new Access Keys
 #If there are access keys other than the current session, delete them
 if len(user_access_keys["AccessKeyMetadata"]) > 1:
    for x in user_access_keys["AccessKeyMetadata"]:
@@ -204,33 +188,26 @@ if len(user_access_keys["AccessKeyMetadata"]) > 1:
           print ("Deleting access key " + x["AccessKeyId"] + "...")
           print ()
           iam.delete_access_key(AccessKeyId=x["AccessKeyId"])
-
 #Generate New Access key
 response = iam.create_access_key(UserName=my_user_name)
-
 new_access_key = response["AccessKey"]["AccessKeyId"]
 new_access_secret = response["AccessKey"]["SecretAccessKey"]
-
 print ("Created New Access Key: " + new_access_key)
-
-
 print ()
-print ("Waiting for new acess key to become active...")
 
-#Insert step to create a session and test new access keys here.
-#retry 10 times with a lag starting 2 seconds and doubling each time
 
+#Create a session and test new access keys here.
+#retry max_retries times at 2 second intervals
 i = 0
-timeout_expired = False
-while not creds_updated(new_access_key,new_access_secret) and not timeout_expired:
+max_retries = 20
+print ("Waiting for new acess key to become active...")
+while not creds_updated(new_access_key,new_access_secret) and i < max_retries:
     i = i + 1
-    if i >= 5:
-        timeout_expired = True
-        print ("Credential update failed!  Aborting.")
-        exit()
+    if i >= max_retries:
+        exit("Credential update failed!  Aborting.")
     time.sleep(2)
-
 print ()
+
 #Set DBeaver to use new Access Key
 print ("Updating DBeaver to use new access key...")
 orig_creds = decrypt_file(filepath, key)
