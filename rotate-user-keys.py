@@ -58,19 +58,6 @@ def decrypt_file(file_name, key):
     dec = decrypt(ciphertext, key)
     return dec
 
-def update_creds(config_string, new_access_key, new_access_secret):
-    json_config = json.loads(config_string)
-    for x in json_config:
-        json_config[x]["#connection"]["user"] = new_access_key
-        json_config[x]["#connection"]["password"] = new_access_secret
-
-    #Replace password with updates secret key
-    updated_config_string = json.dumps(json_config).encode('utf-8')
-    #remove white space from string
-    updated_config_string = updated_config_string.replace(b' ', b'')
-    return updated_config_string
-
-
 def replace_in_file (file_name, orig_string, replacement_string):
    #replace with single file handle
    with open(file_name, "rt") as fin:
@@ -80,6 +67,10 @@ def replace_in_file (file_name, orig_string, replacement_string):
    copyfile(file_name + ".out", file_name)
    os.remove(file_name + ".out")
 
+def update_dbeaver_creds(configstring, old_access_key, old_access_secret, new_access_key, new_access_secret):
+    configstring = configstring.replace(old_access_key,new_access_key)
+    configstring = configstring.replace(old_access_secret,new_access_secret)
+    return configstring
 
 def update_aws_creds_file(file_name, old_access_key, old_access_secret, new_access_key, new_access_secret):
     #Todo - refactor to tidy up 'replace' function
@@ -210,8 +201,11 @@ print ()
 
 #Set DBeaver to use new Access Key
 print ("Updating DBeaver to use new access key...")
+
 orig_creds = decrypt_file(filepath, key)
-updated_creds = update_creds(orig_creds, new_access_key, new_access_secret)
+print (orig_creds)
+updated_creds = update_dbeaver_creds(orig_creds.decode("utf-8"), current_access_key, current_access_secret, new_access_key, new_access_secret).encode("utf-8")
+print (updated_creds)
 encrypt_to_file(updated_creds, filepath, key)
 
 print ("Updating local AWS credentials file...")
