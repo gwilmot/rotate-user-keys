@@ -91,9 +91,9 @@ def creds_updated (access_key, access_secret):
             aws_secret_access_key=access_secret)
     try:
         test_client.get_user()
-        return 1
+        return True
     except:
-        return 0
+        return False
 
 
 #Hardcoded symmetric encryption key used by DBeaver
@@ -203,9 +203,7 @@ print ()
 print ("Updating DBeaver to use new access key...")
 
 orig_creds = decrypt_file(filepath, key)
-print (orig_creds)
 updated_creds = update_dbeaver_creds(orig_creds.decode("utf-8"), current_access_key, current_access_secret, new_access_key, new_access_secret).encode("utf-8")
-print (updated_creds)
 encrypt_to_file(updated_creds, filepath, key)
 
 print ("Updating local AWS credentials file...")
